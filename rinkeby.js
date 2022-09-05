@@ -212,10 +212,6 @@ const offerOrderSpecificBuyer = async () => {
 
     const order = await orderCreate.executeAllActions(); // 구조상 db에 저장 해야된다
     console.log("order: ", order);
-    
-    const paymentItems = order.parameters.consideration.filter(
-        (item) => item.recipient.toLowerCase() !== fulfiller.toLowerCase()
-    );
 
     const counterOrder = constructPrivateListingCounterOrder(
         order,
@@ -226,6 +222,7 @@ const offerOrderSpecificBuyer = async () => {
     const fulfillments = getPrivateListingFulfillments(order);
     console.log("fulfillments : ", fulfillments);
 
+    // fulfillOrder 말고 matchOrder 함수 부르는 경우를 위한 기능 추가 필요 
     const transaction = await seaport1.matchOrders({
         orders: [order, counterOrder], 
         fulfillments,
