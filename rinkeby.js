@@ -10,7 +10,7 @@ const { ALCHEMY_KEY, ACCOUNT_PRIVATE_KEY1, ACCOUNT_PRIVATE_KEY2 } = process.env;
 // Provider must be provided to the signer when supplying a custom signer
 const provider = new ethers.providers.JsonRpcProvider(
     `https://eth-rinkeby.alchemyapi.io/v2/${ALCHEMY_KEY}`
-);
+);  // https://rinkeby.infura.io/v3/68d856374aea4c2f8c170cb9e8b27a67 infura 사용시 
 
 // 사용자별 지갑 연결이 다르니까 실제 구현시 2개 필요 없음
 const signer1 = new ethers.Wallet(ACCOUNT_PRIVATE_KEY1, provider); // 0x55C
@@ -65,8 +65,8 @@ const offerOrder = async () => {
     // 거래 취소
     // 취소된 거래 fulfill 시도시 Warning! Error encountered during contract execution [execution reverted]로 취소된다 
     //      -> etherscan으로 확인 가능
-    const orderCancel = await seaport2.cancelOrders([order.parameters], offerer).transact();
-    console.log("cancel order : ", orderCancel);
+    // const orderCancel = await seaport2.cancelOrders([order.parameters], offerer).transact();
+    // console.log("cancel order : ", orderCancel);
 
     // const orderhash = seaport2.getOrderHash(order.parameters);
     // console.log("order hash : ", orderhash);
@@ -78,7 +78,7 @@ const offerOrder = async () => {
     // console.log("counter : ", counterNum);
 
     const { executeAllActions: executeAllFulfillActions } = await seaport1.fulfillOrder({
-        order, // 구조상 db에서 찾아와야 할 것으로 보인다
+        order, // 구조상 db에서 찾아와야 할 것으로 보인다 opensea-js getOrder 참조 
         accountAddress: fulfiller,
         conduitKey: "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000"
         // 수령인이 달라질 경우 recipientAddress argument 넣어줄 것
@@ -169,6 +169,7 @@ const offer1155 = async () =>{
 // offer1155();
 
 // specific buyer 경우, 즉 matchOrders
+// matchorder 사용 -> 어느 offer랑 어느 consideration을 매칭해줘야 하나의 기능이 필요한 order
 const offerOrderSpecificBuyer = async () => {
     const fulfiller = "0x55C5aEaB5D6676aeEA374A48246393a63eaab7aE"; // seaport1 
     const offerer = "0x191a0b6268C7aeaaE8C2e35Ff01199875ef49104";   // seaport2
@@ -212,6 +213,10 @@ const offerOrderSpecificBuyer = async () => {
 
     const order = await orderCreate.executeAllActions(); // 구조상 db에 저장 해야된다
     console.log("order: ", order);
+    
+    const paymentItems = order.parameters.consideration.filter(
+        (item) => item.recipient.toLowerCase() !== fulfiller.toLowerCase()
+    );
 
     const counterOrder = constructPrivateListingCounterOrder(
         order,
@@ -223,6 +228,7 @@ const offerOrderSpecificBuyer = async () => {
     console.log("fulfillments : ", fulfillments);
 
     // fulfillOrder 말고 matchOrder 함수 부르는 경우를 위한 기능 추가 필요 
+    // -> order의 offer item이 consideration item에 포함된 경우
     const transaction = await seaport1.matchOrders({
         orders: [order, counterOrder], 
         fulfillments,
@@ -233,7 +239,113 @@ const offerOrderSpecificBuyer = async () => {
     }).transact();
     console.log("match order : ", transaction);
 } 
-offerOrderSpecificBuyer();
+// offerOrderSpecificBuyer();
+
+// bundle order -> 즉 offer가 2개 이상 그대로 fulfillOrder 사용하면 된다
+const offerOrders = async () => {
+    const fulfiller = "0x55C5aEaB5D6676aeEA374A48246393a63eaab7aE"; // seaport1 
+    const offerer = "0x191a0b6268C7aeaaE8C2e35Ff01199875ef49104";   // seaport2
+
+    const orderCreate = await seaport2.createOrder(
+        {
+            conduitKey: "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+            zone: "0x00000000E88FE2628EbC5DA81d2b3CeaD633E89e",
+            zoneHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+            endTime:1664428149,
+            offer: [{
+                itemType: ItemType.ERC721,
+                token: "0x7995EcBDAfA4703A7BD2E3d1e19CcfC71a4A8457",
+                identifier: "0",
+                amount: "1",
+                endAmount: "1"
+            }, {
+                itemType: ItemType.ERC721,
+                token: "0x7995EcBDAfA4703A7BD2E3d1e19CcfC71a4A8457",
+                identifier: "1",
+                amount: "1",
+                endAmount: "1"
+            }],
+            consideration: [{ 
+                token: "0x0000000000000000000000000000000000000000",
+                amount: ethers.utils.parseEther("0.01").toString(),
+                endAmount: ethers.utils.parseEther("0.01").toString(),
+                identifier: "0",
+                recipient: offerer
+            }],
+            allowPartialFills: false,
+            restrictedByZone: true,
+            fees:[{recipient: "0x0000a26b00c1F0DF003000390027140000fAa719", basisPoints: 250}],
+        },
+        offerer
+    );
+
+    const order = await orderCreate.executeAllActions();
+    console.log("create order : ", order);
+
+    // const orderCancel = await seaport2.cancelOrders([order.parameters], offerer).transact();
+    // console.log("cancel order : ", orderCancel);
+
+    const { executeAllActions: executeAllFulfillActions } = await seaport1.fulfillOrder({
+        order, 
+        accountAddress: fulfiller,
+        conduitKey: "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000"
+    });
+
+    const transaction = await executeAllFulfillActions();
+    console.log("offer order : ", transaction);
+} 
+// offerOrders();
+
+// 구매 제안 order의 경우
+const buyOrder = async () => {
+    const fulfiller = "0x55C5aEaB5D6676aeEA374A48246393a63eaab7aE"; // seaport1 
+    const offerer = "0x191a0b6268C7aeaaE8C2e35Ff01199875ef49104";   // seaport2
+
+    const orderCreate = await seaport2.createOrder(
+        {
+            conduitKey: "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+            zone: "0x00000000E88FE2628EbC5DA81d2b3CeaD633E89e",
+            zoneHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+            endTime:1664428149,
+            offer: [{ // (주의) seaport는 offer에 ether 불가로 설계되어 있다 -> ether는 erc20 규격이 아니라서
+                token: "0xc778417E063141139Fce010982780140Aa0cD5Ab", // WETH address
+                amount: ethers.utils.parseEther("0.01").toString(),
+                endAmount: ethers.utils.parseEther("0.01").toString(),
+                identifier: "0"
+            }],
+            consideration: [{
+                itemType: ItemType.ERC721,
+                token: "0x7995EcBDAfA4703A7BD2E3d1e19CcfC71a4A8457",
+                identifier: "1",
+                amount: "1",
+                endAmount: "1"
+            }],
+            allowPartialFills: false,
+            restrictedByZone: true,
+            fees:[{recipient: "0x0000a26b00c1F0DF003000390027140000fAa719", basisPoints: 250}],
+        },
+        offerer
+    );
+
+    const order = await orderCreate.executeAllActions();
+    console.log("create order : ", order);
+
+    console.log("order Type : ", order.parameters.orderType); 
+
+    // const orderCancel = await seaport2.cancelOrders([order.parameters], offerer).transact();
+    // console.log("cancel order : ", orderCancel);
+
+    const { executeAllActions: executeAllFulfillActions } = await seaport1.fulfillOrder({
+        order, 
+        accountAddress: fulfiller,
+        conduitKey: "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000"
+    });
+
+    const transaction = await executeAllFulfillActions();
+    console.log("offer order : ", transaction);
+} 
+buyOrder();
+
 
 // <이 아래는 기능들 안에서 사용되는 internal 느낌의 함수들>
 // counterOrder 생성
@@ -353,3 +465,22 @@ const getPrivateListingFulfillments = (
   
     return [...nftRelatedFulfillments, ...currencyRelatedFulfillments];
 };
+
+// match Order 사용해야하나 판별용
+const isMatchOrder = (
+    order
+) => {
+    order.parameters.offer.forEach((offerItem) => {
+        const considerationIndex = order.parameters.consideration.findIndex(
+            (considerationItem) =>
+                considerationItem.itemType === offerItem.itemType &&
+                considerationItem.token === offerItem.token &&
+                considerationItem.identifierOrCriteria === offerItem.identifierOrCriteria
+        );
+        if (considerationIndex === -1) {
+            return true;
+        }
+
+        return false;
+    })
+}

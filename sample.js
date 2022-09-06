@@ -130,8 +130,7 @@ const getPrivateListingFulfillments = (
           (considerationItem) =>
             considerationItem.itemType === offerItem.itemType &&
             considerationItem.token === offerItem.token &&
-            considerationItem.identifierOrCriteria ===
-              offerItem.identifierOrCriteria
+            considerationItem.identifierOrCriteria === offerItem.identifierOrCriteria
         );
       if (considerationIndex === -1) {
         throw new Error(
