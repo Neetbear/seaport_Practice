@@ -170,6 +170,7 @@ const offer1155 = async () =>{
 
 // specific buyer 경우, 즉 matchOrders
 // matchorder 사용 -> 어느 offer랑 어느 consideration을 매칭해줘야 하나의 기능이 필요한 order
+// match Order의 경우 수령인 변경 불가능 
 const offerOrderSpecificBuyer = async () => {
     const fulfiller = "0x55C5aEaB5D6676aeEA374A48246393a63eaab7aE"; // seaport1 
     const offerer = "0x191a0b6268C7aeaaE8C2e35Ff01199875ef49104";   // seaport2
@@ -213,10 +214,6 @@ const offerOrderSpecificBuyer = async () => {
 
     const order = await orderCreate.executeAllActions(); // 구조상 db에 저장 해야된다
     console.log("order: ", order);
-    
-    const paymentItems = order.parameters.consideration.filter(
-        (item) => item.recipient.toLowerCase() !== fulfiller.toLowerCase()
-    );
 
     const counterOrder = constructPrivateListingCounterOrder(
         order,
