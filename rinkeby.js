@@ -51,7 +51,7 @@ const offerOrder = async () => {
                 identifier: "0",
                 recipient: offerer
             }],
-            // counter: 0, seaport가 알아서 찾아주니 생략해도 된다
+            // counter: 0, seaport가 알아서 찾아주니 생략해도 된다 (seaport/lib/CounterManager.sol)
             allowPartialFills: false, // 부분거래 허용시에만 true
             restrictedByZone: true, // zone 사용시에만 true 줄 수 있다
             fees:[{recipient: "0x0000a26b00c1F0DF003000390027140000fAa719", basisPoints: 250}],
@@ -65,6 +65,7 @@ const offerOrder = async () => {
     // 거래 취소
     // 취소된 거래 fulfill 시도시 Warning! Error encountered during contract execution [execution reverted]로 취소된다 
     //      -> etherscan으로 확인 가능
+    // seaport 의 cancel 기능
     // const orderCancel = await seaport2.cancelOrders([order.parameters], offerer).transact();
     // console.log("cancel order : ", orderCancel);
 
@@ -89,7 +90,8 @@ const offerOrder = async () => {
 } 
 // offerOrder();
 
-// bulkOrder 는 offerer가 만든 모든 order 취소 사용할일 없어보인다
+// bulkOrder 는 offerer가 만든 모든 order 취소 
+// setting에 account support의 cancel all ethereum listings and offers 기능 -> seaport 의 incrementCounter() 기능
 const bulkOrder = async () => {
     const fulfiller = "0x55C5aEaB5D6676aeEA374A48246393a63eaab7aE"; // seaport1
     const offerer = "0x191a0b6268C7aeaaE8C2e35Ff01199875ef49104";   // seaport2
@@ -168,7 +170,7 @@ const offer1155 = async () =>{
 } 
 // offer1155();
 
-// specific buyer 경우, 즉 matchOrders
+// specific buyer 경우, 즉 matchOrders (혹은 제안 받은 order의 counter order 경우에도 match order로 온다)
 // matchorder 사용 -> 어느 offer랑 어느 consideration을 매칭해줘야 하나의 기능이 필요한 order
 // match Order의 경우 수령인 변경 불가능 
 const offerOrderSpecificBuyer = async () => {
@@ -341,7 +343,7 @@ const buyOrder = async () => {
     const transaction = await executeAllFulfillActions();
     console.log("offer order : ", transaction);
 } 
-buyOrder();
+// buyOrder();
 
 
 // <이 아래는 기능들 안에서 사용되는 internal 느낌의 함수들>
