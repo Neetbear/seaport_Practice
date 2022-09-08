@@ -15,6 +15,7 @@ const provider = new ethers.providers.JsonRpcProvider(
 // 사용자별 지갑 연결이 다르니까 실제 구현시 2개 필요 없음
 const signer1 = new ethers.Wallet(ACCOUNT_PRIVATE_KEY1, provider); // 0x55C
 const signer2 = new ethers.Wallet(ACCOUNT_PRIVATE_KEY2, provider); // 0x191
+// console.log(signer1);
 
 const seaport1 = new Seaport(signer1);
 const seaport2 = new Seaport(signer2);
@@ -23,7 +24,7 @@ const seaport2 = new Seaport(signer2);
 // db 필요 부분 총 3개 예상 
 // 1. createOrder 후 order fulfillOrder 전까지 order 정보 
 // 2. 거래가에 대한 영역 및 list 관련
-// 3. 수수료나 창작자의 2차 거래 수익등 관련 
+// 3. 수수료나 창작자의 2차 거래 수익등 관련 -> 창작자의 거래 수익은 contract상으로 저장되는 부분이 없으므로 특히 기능이 필요할 경우 db 사용이 필수적이다 
 // 입력받을 값 마감 시간, offer 정보, consideration 정보 (수수료 현재까진 미사용 예정)
 const offerOrder = async () => {
     const fulfiller = "0x55C5aEaB5D6676aeEA374A48246393a63eaab7aE"; // seaport1 
@@ -69,16 +70,22 @@ const offerOrder = async () => {
     // const orderCancel = await seaport2.cancelOrders([order.parameters], offerer).transact();
     // console.log("cancel order : ", orderCancel);
 
-    // const orderhash = seaport2.getOrderHash(order.parameters);
-    // console.log("order hash : ", orderhash);
+    /*
+        const orderhash = seaport2.getOrderHash(order.parameters);
+        console.log("order hash : ", orderhash);
 
-    // const orderStatus = await seaport2.getOrderStatus(orderhash);
-    // console.log("order status : ", orderStatus);
+        const orderStatus = await seaport2.getOrderStatus(orderhash);
+        console.log("order status : ", orderStatus);
 
-    // const counterNum = await seaport2.getCounter(offerer);
-    // console.log("counter : ", counterNum);
+        const counterNum = await seaport2.getCounter(offerer);
+        console.log("counter : ", counterNum);
+        order의 status나 counter로 order의 상태를 알 수 있다
+    */
 
-    const { executeAllActions: executeAllFulfillActions } = await seaport1.fulfillOrder({
+    // fulfillOrder func이 자동으로 맞는 seaport fulfill 함수 가져다쓴다 
+    // -> fulfillAdvancedOrder 조건 const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems(token id가 빠져서 추후에 줄경우 거의 없을듯)) || isGift;
+    // -> const criteriaResolver = buildResolver(0, 1, 0, toBN(root), []); side는 offer냐 consideration이냐 
+    const { executeAllActions: executeAllFulfillActions } = await seaport1.fulfillOrder({ 
         order, // 구조상 db에서 찾아와야 할 것으로 보인다 opensea-js getOrder 참조 
         accountAddress: fulfiller,
         conduitKey: "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000"

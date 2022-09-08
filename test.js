@@ -2,6 +2,7 @@ var signing_key_1 = require("@ethersproject/signing-key");
 var bytes_1 = require("@ethersproject/bytes");
 var keccak256_1 = require("@ethersproject/keccak256");
 var address_1 = require("@ethersproject/address");
+var { keccak256, recoverAddress } = require("ethers/lib/utils");
 
 
 function computeAddress(key) {
