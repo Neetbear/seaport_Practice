@@ -27,10 +27,10 @@ const seaport2 = new Seaport(signer2);
 // 3. 수수료나 창작자의 2차 거래 수익등 관련 -> 창작자의 거래 수익은 contract상으로 저장되는 부분이 없으므로 특히 기능이 필요할 경우 db 사용이 필수적이다 
 // 입력받을 값 마감 시간, offer 정보, consideration 정보 (수수료 현재까진 미사용 예정)
 const offerOrder = async () => {
-    const fulfiller = "0x55C5aEaB5D6676aeEA374A48246393a63eaab7aE"; // seaport1 
-    const offerer = "0x191a0b6268C7aeaaE8C2e35Ff01199875ef49104";   // seaport2
+    const offerer = "0x55C5aEaB5D6676aeEA374A48246393a63eaab7aE"; // seaport1 
+    const fulfiller = "0x191a0b6268C7aeaaE8C2e35Ff01199875ef49104";   // seaport2
 
-    const orderCreate = await seaport2.createOrder(
+    const orderCreate = await seaport1.createOrder(
         {
             conduitKey: "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
             // zone 사용시에만 입력 
@@ -55,7 +55,7 @@ const offerOrder = async () => {
             // counter: 0, seaport가 알아서 찾아주니 생략해도 된다 (seaport/lib/CounterManager.sol)
             allowPartialFills: false, // 부분거래 허용시에만 true
             restrictedByZone: true, // zone 사용시에만 true 줄 수 있다
-            fees:[{recipient: "0x0000a26b00c1F0DF003000390027140000fAa719", basisPoints: 250}],
+            // fees:[{recipient: "0x0000a26b00c1F0DF003000390027140000fAa719", basisPoints: 250}],
         },
         offerer
     );
@@ -85,7 +85,7 @@ const offerOrder = async () => {
     // fulfillOrder func이 자동으로 맞는 seaport fulfill 함수 가져다쓴다 
     // -> fulfillAdvancedOrder 조건 const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems(token id가 빠져서 추후에 줄경우 거의 없을듯)) || isGift;
     // -> const criteriaResolver = buildResolver(0, 1, 0, toBN(root), []); side는 offer냐 consideration이냐 
-    const { executeAllActions: executeAllFulfillActions } = await seaport1.fulfillOrder({ 
+    const { executeAllActions: executeAllFulfillActions } = await seaport2.fulfillOrder({ 
         order, // 구조상 db에서 찾아와야 할 것으로 보인다 opensea-js getOrder 참조 
         accountAddress: fulfiller,
         conduitKey: "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000"

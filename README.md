@@ -41,14 +41,14 @@ const orderCreate = await seaport.createOrder(
             recipient: offerer
         }],
     },
-    offerer // 연결된 지갑 address 자동으로 들어가므로 생략가능
+    offerer
 )
 const order = await orderCreate.executeAllActions(); // order를 db에 저장 해야된다
 console.log("create order : ", order);
 ```
 ```javascript
 const { executeAllActions: executeAllFulfillActions } = await seaport1.fulfillOrder({ 
-    order, // 구조상 db에서 찾아와야 할 것으로 보인다 opensea-js getOrder 참조 
+    order,
     accountAddress: fulfiller,
     conduitKey: "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000"
     // 수령인이 달라질 경우 recipientAddress argument 넣어줄 것
@@ -85,7 +85,7 @@ const orderCreate = await seaport.createOrder(
             recipient: fulfiller // 구매 대상자를 위해 consideration 작성 필수
         }],
     },
-    offerer // 연결된 지갑 address 자동으로 들어가므로 생략가능
+    offerer
 )
 ```
 ```javascript
@@ -224,4 +224,35 @@ const getPrivateListingFulfillments = (
 ```javascript
 const orderCancel = await seaport.cancelOrders([order.parameters], offerer).transact();
 console.log("cancel order : ", orderCancel);
+```
+
+### chain ID 고려
+If the currently connected metamask network and the network to which the token is distributed are different, an error will naturally occur, so it is necessary to consider about this
+This method is specified by EIP-3326
+```javascript
+try {
+  await ethereum.request({
+    method: 'wallet_switchEthereumChain',
+    params: [{ chainId: '0xf00' }],
+  });
+} catch (switchError) {
+  // This error code indicates that the chain has not been added to MetaMask.
+  if (switchError.code === 4902) {
+    try {
+      await ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId: '0xf00',
+            chainName: '...',
+            rpcUrls: ['https://...'] /* ... */,
+          },
+        ],
+      });
+    } catch (addError) {
+      // handle "add" error
+    }
+  }
+  // handle other "switch" errors
+}
 ```

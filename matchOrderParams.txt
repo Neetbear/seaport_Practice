@@ -1,12 +1,12 @@
 0   orders.parameters	tuple	0x191a0b6268C7aeaaE8C2e35Ff01199875ef49104,                         -> offerer
                                 0x00000000E88FE2628EbC5DA81d2b3CeaD633E89e,                         -> zone address
-                                                                                                    <offer>
+                                                                            <offer>
                                 2,                                                                  -> token type
                                 0x51Bae864d00D543F2A40f2B6A623ABBea46AeA7e,                         -> token address
                                 0,                                                                  -> token id
                                 1,                                                                  -> start amount
                                 1,                                                                  -> end amount
-                                                                                                    <consideration>
+                                                                            <consideration>
                                 0,                                                                  -> token type
                                 0x0000000000000000000000000000000000000000,                         -> token address
                                 0,                                                                  -> token id
